@@ -1,13 +1,16 @@
-# Installing the Client Tools
+# Client toolsのインストール
 
-In this lab you will install the command line utilities required to complete this tutorial: [cfssl](https://github.com/cloudflare/cfssl), [cfssljson](https://github.com/cloudflare/cfssl), and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl).
-
+この章では、kubernetesを利用する際に使う[cfssl](https://github.com/cloudflare/cfssl)、[cfssljson](https://github.com/cloudflare/cfssl)、[kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl)をインストールしていきます。
 
 ## Install CFSSL
 
 The `cfssl` and `cfssljson` command line utilities will be used to provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) and generate TLS certificates.
 
-Download and install `cfssl` and `cfssljson`:
+`cfssl`及び`cfssljson`は[PKI基盤](https://en.wikipedia.org/wiki/Public_key_infrastructure)を準備し、TLS証明書を発行します。
+PKI基盤についての日本語wikiの説明は[こちら](https://ja.wikipedia.org/wiki/%E5%85%AC%E9%96%8B%E9%8D%B5%E5%9F%BA%E7%9B%A4)。
+お互いのやりとりをするための鍵情報のセットを一括発行するものという認識で捉えてもらえればと思います。
+
+以下で`cfssl` 及び `cfssljson`をインストールしていきます。
 
 ### OS X
 
@@ -24,7 +27,7 @@ chmod +x cfssl cfssljson
 sudo mv cfssl cfssljson /usr/local/bin/
 ```
 
-Some OS X users may experience problems using the pre-built binaries in which case [Homebrew](https://brew.sh) might be a better option:
+OS Xのバージョンによってはうまくいかない場合があるので、その場合は[Homebrew](https://brew.sh)を試してみてください。
 
 ```
 brew install cfssl
@@ -46,9 +49,9 @@ chmod +x cfssl cfssljson
 sudo mv cfssl cfssljson /usr/local/bin/
 ```
 
-### Verification
+### インストールの確認
 
-Verify `cfssl` and `cfssljson` version 1.3.4 or higher is installed:
+version 1.3.4以上の `cfssl` ならびに `cfssljson` がインストールされているかを確認します。
 
 ```
 cfssl version
@@ -73,7 +76,7 @@ Runtime: go1.13
 
 ## Install kubectl
 
-The `kubectl` command line utility is used to interact with the Kubernetes API Server. Download and install `kubectl` from the official release binaries:
+`kubectl` はコマンドライン上でKubernetesのAPIサーバーとやり取りをするためのツールです。`kubectl`を公式ページからダウンロード並びにインストールしていきましょう。
 
 ### OS X
 
@@ -103,9 +106,9 @@ chmod +x kubectl
 sudo mv kubectl /usr/local/bin/
 ```
 
-### Verification
+### インストールの確認
 
-Verify `kubectl` version 1.15.3 or higher is installed:
+version 1.15.3以上の`kubectl` がインストールされているかを確認します。
 
 ```
 kubectl version --client
