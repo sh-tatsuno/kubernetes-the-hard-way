@@ -1,28 +1,31 @@
 # Provisioning Compute Resources
 
-Kubernetes requires a set of machines to host the Kubernetes control plane and the worker nodes where containers are ultimately run. In this lab you will provision the compute resources required for running a secure and highly available Kubernetes cluster across a single [compute zone](https://cloud.google.com/compute/docs/regions-zones/regions-zones).
+Kubernetesはcontrol plane(workerを管理するためのmaster ノード)、及びコンテナが実際に動くworkerノードから構成されます。
 
-> Ensure a default compute zone and region have been set as described in the [Prerequisites](01-prerequisites.md#set-a-default-compute-region-and-zone) lab.
+この章では実際にGCPのリソースを使ってKubernetesのクラスタを単一の[ゾーン](https://cloud.google.com/compute/docs/regions-zones/regions-zones)に構築していきます。
+
+> デフォルトのゾーンについては前章 [Prerequisites](01-prerequisites.md#set-a-default-compute-region-and-zone) を参照してください。
 
 ## Networking
+Kubernetesの[ネットワークモデル](https://kubernetes.io/docs/concepts/cluster-administration/networking/#kubernetes-model)はコンテナとノードが互いにやり取りを行うフラットなネットワーク構造になっています。
 
-The Kubernetes [networking model](https://kubernetes.io/docs/concepts/cluster-administration/networking/#kubernetes-model) assumes a flat network in which containers and nodes can communicate with each other. In cases where this is not desired [network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) can limit how groups of containers are allowed to communicate with each other and external network endpoints.
+もし、無制限に通信を許可したくない場合は[network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)を使って、どれくらいのコンテナが相互に、ないしは外部ネットワークとやりとりができるかを制限することができます。
 
-> Setting up network policies is out of scope for this tutorial.
+> network policiesの作成はこのチュートリアルのスコープ外とします。
 
 ### Virtual Private Cloud Network
 
-In this section a dedicated [Virtual Private Cloud](https://cloud.google.com/compute/docs/networks-and-firewalls#networks) (VPC) network will be setup to host the Kubernetes cluster.
+この項ではkubernetesのクラスタをホストするための[Virtual Private Cloud](https://cloud.google.com/compute/docs/networks-and-firewalls#networks) (VPC)を作成します。
 
-Create the `kubernetes-the-hard-way` custom VPC network:
+`kubernetes-the-hard-way`というVPC Networkを作成します。
 
 ```
 gcloud compute networks create kubernetes-the-hard-way --subnet-mode custom
 ```
 
-A [subnet](https://cloud.google.com/compute/docs/vpc/#vpc_networks_and_subnets) must be provisioned with an IP address range large enough to assign a private IP address to each node in the Kubernetes cluster.
+[サブネット](https://cloud.google.com/compute/docs/vpc/#vpc_networks_and_subnets) は、Kubernetes内でprivate IPを割り振れるだけのIPアドレスの範囲を指定する必要があります。
 
-Create the `kubernetes` subnet in the `kubernetes-the-hard-way` VPC network:
+`kubernetes`という名前のサブネットを先ほど作ったVPC ネットワーク (`kubernetes-the-hard-way`) 内に作成します。
 
 ```
 gcloud compute networks subnets create kubernetes \
@@ -30,11 +33,13 @@ gcloud compute networks subnets create kubernetes \
   --range 10.240.0.0/24
 ```
 
-> The `10.240.0.0/24` IP address range can host up to 254 compute instances.
+> `10.240.0.0/24` というIP address rangeだと、一般的には全32ビットのうち左側24ビットが固定されて自由に使えるのが8ビット`10.240.0.1/24 - 10.240.0.254/24`なので、2**8-2で最大254個インスタンスをホストすることができます。
 
+> GCPの場合は予約アドレスが4つあるので最大インスタンス数は252個です。
+ 
 ### Firewall Rules
 
-Create a firewall rule that allows internal communication across all protocols:
+内部ネットワーク通信を許可するファイアウォールのルールを設定を行います
 
 ```
 gcloud compute firewall-rules create kubernetes-the-hard-way-allow-internal \
@@ -43,7 +48,7 @@ gcloud compute firewall-rules create kubernetes-the-hard-way-allow-internal \
   --source-ranges 10.240.0.0/24,10.200.0.0/16
 ```
 
-Create a firewall rule that allows external SSH, ICMP, and HTTPS:
+外部からのSSH、ICMP、HTTPSをそれぞれ許可するファイアウォールのルールを設定します。
 
 ```
 gcloud compute firewall-rules create kubernetes-the-hard-way-allow-external \
@@ -52,9 +57,9 @@ gcloud compute firewall-rules create kubernetes-the-hard-way-allow-external \
   --source-ranges 0.0.0.0/0
 ```
 
-> An [external load balancer](https://cloud.google.com/compute/docs/load-balancing/network/) will be used to expose the Kubernetes API Servers to remote clients.
+> [ロードバランサ](https://cloud.google.com/compute/docs/load-balancing/network/) を利用してKubernetesのAPIサーバと操作するリモートクライアントを行います。
 
-List the firewall rules in the `kubernetes-the-hard-way` VPC network:
+`kubernetes-the-hard-way` 内のファイアウォールルールを確認します。
 
 ```
 gcloud compute firewall-rules list --filter="network:kubernetes-the-hard-way"
@@ -70,14 +75,14 @@ kubernetes-the-hard-way-allow-internal  kubernetes-the-hard-way  INGRESS    1000
 
 ### Kubernetes Public IP Address
 
-Allocate a static IP address that will be attached to the external load balancer fronting the Kubernetes API Servers:
+外部のロードバランサとやり取りを行うために、KubernetesのAPIサーバに静的なIPアドレスを配置します。
 
 ```
 gcloud compute addresses create kubernetes-the-hard-way \
   --region $(gcloud config get-value compute/region)
 ```
 
-Verify the `kubernetes-the-hard-way` static IP address was created in your default compute region:
+`kubernetes-the-hard-way` にデフォルトリージョンでstatic IPが作成されていることを確認します。
 
 ```
 gcloud compute addresses list --filter="name=('kubernetes-the-hard-way')"
@@ -91,12 +96,11 @@ kubernetes-the-hard-way  us-west1  XX.XXX.XXX.XX  RESERVED
 ```
 
 ## Compute Instances
-
-The compute instances in this lab will be provisioned using [Ubuntu Server](https://www.ubuntu.com/server) 18.04, which has good support for the [containerd container runtime](https://github.com/containerd/containerd). Each compute instance will be provisioned with a fixed private IP address to simplify the Kubernetes bootstrapping process.
+インスタンスはdockerのコンテナランタイムの[containerd](https://github.com/containerd/containerd)をサポートしている[Ubuntu Server](https://www.ubuntu.com/server) 18.04を利用する。簡単のためにプライベートIPを固定してコンテナを作成します。
 
 ### Kubernetes Controllers
 
-Create three compute instances which will host the Kubernetes control plane:
+Kubernetesのcontrol plane (=master node) として3つのインスタンスを作成します。
 
 ```
 for i in 0 1 2; do
@@ -116,11 +120,11 @@ done
 
 ### Kubernetes Workers
 
-Each worker instance requires a pod subnet allocation from the Kubernetes cluster CIDR range. The pod subnet allocation will be used to configure container networking in a later exercise. The `pod-cidr` instance metadata will be used to expose pod subnet allocations to compute instances at runtime.
+それぞれのworkerインスタンスはKubernetesクラスター内のCIDRブロックからのサブネットの割り当てが必要になります。コンテナのネットワーク接続のためのpodへのサブネット設定は後の章で行います。`pod-cidr` インスタンスのmetadataはサブネットを外部ネットワークに公開し、ランタイム時にインスタンスを計算するのに活用されます。
 
-> The Kubernetes cluster CIDR range is defined by the Controller Manager's `--cluster-cidr` flag. In this tutorial the cluster CIDR range will be set to `10.200.0.0/16`, which supports 254 subnets.
+> KubernetesクラスターのCIDRブロックはkube-controller-managerで`--cluster-cidr`のフラグによって指定することができます。このチュートリアルではクラスターのCIDRブロックを254個のサブネットが利用できる`10.200.0.0/16`に設定します。
 
-Create three compute instances which will host the Kubernetes worker nodes:
+Kubernetesのworker nodesとして3つのインスタンスを作成します。
 
 ```
 for i in 0 1 2; do
@@ -141,7 +145,7 @@ done
 
 ### Verification
 
-List the compute instances in your default compute zone:
+デフォルトのゾーンにおけるインスタンスを表示します。
 
 ```
 gcloud compute instances list
@@ -161,15 +165,15 @@ worker-2      us-west1-c  n1-standard-1               10.240.0.22  XXX.XXX.XX.XX
 
 ## Configuring SSH Access
 
-SSH will be used to configure the controller and worker instances. When connecting to compute instances for the first time SSH keys will be generated for you and stored in the project or instance metadata as described in the [connecting to instances](https://cloud.google.com/compute/docs/instances/connecting-to-instance) documentation.
+SSHはcontrollerインスタンスとworkerインスタンスをそれぞれ設定するために利用します。[connecting to instances](https://cloud.google.com/compute/docs/instances/connecting-to-instance)に書かれている通り、はじめてインスタンスに接続する際にSSH用のkeyが作られ、GCPプロジェクト及びインスタンスのmetadataとして保存されます。
 
-Test SSH access to the `controller-0` compute instances:
+試しに `controller-0` インスタンスにSSHアクセスしてみます
 
 ```
 gcloud compute ssh controller-0
 ```
 
-If this is your first time connecting to a compute instance SSH keys will be generated for you. Enter a passphrase at the prompt to continue:
+はじめての接続の際はSSH用のkeyが作成されます。ターミナル上でパスフレーズを入れて続行します。
 
 ```
 WARNING: The public SSH key file for gcloud does not exist.
@@ -181,7 +185,7 @@ Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
 ```
 
-At this point the generated SSH keys will be uploaded and stored in your project:
+ここで、SSH用のkeyがアップロードされ、プロジェクトに保存されます。
 
 ```
 Your identification has been saved in /home/$USER/.ssh/google_compute_engine.
@@ -205,7 +209,7 @@ Updating project ssh metadata...done.
 Waiting for SSH key to propagate.
 ```
 
-After the SSH keys have been updated you'll be logged into the `controller-0` instance:
+SSHキーが更新された後は`controller-0`にログインできるようになります。
 
 ```
 Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-1042-gcp x86_64)
@@ -214,7 +218,7 @@ Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-1042-gcp x86_64)
 Last login: Sun Sept 14 14:34:27 2019 from XX.XXX.XXX.XX
 ```
 
-Type `exit` at the prompt to exit the `controller-0` compute instance:
+`exit`と打って`controller-0`からログアウトしましょう。
 
 ```
 $USER@controller-0:~$ exit
