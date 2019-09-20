@@ -1,12 +1,14 @@
 # Provisioning a CA and Generating TLS Certificates
 
-In this lab you will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using CloudFlare's PKI toolkit, [cfssl](https://github.com/cloudflare/cfssl), then use it to bootstrap a Certificate Authority, and generate TLS certificates for the following components: etcd, kube-apiserver, kube-controller-manager, kube-scheduler, kubelet, and kube-proxy.
+この章ではCloudFlare's PKI toolkit、[cfssl](https://github.com/cloudflare/cfssl)を使用して[PKI基盤](https://en.wikipedia.org/wiki/Public_key_infrastructure)、認証局(Certificate Authority, CA)や、kubernetesに必要な下記コンポーネントのTLS証明書を作成します。
+
+ etcd, kube-apiserver, kube-controller-manager, kube-scheduler, kubelet, and kube-proxy.
 
 ## Certificate Authority
 
-In this section you will provision a Certificate Authority that can be used to generate additional TLS certificates.
+この項ではTLS証明書を作成するための認証局(CA)を作成します。
 
-Generate the CA configuration file, certificate, and private key:
+CAの設定ファイル、証明書、秘密鍵を生成します。
 
 ```
 {
@@ -51,7 +53,7 @@ cfssl gencert -initca ca-csr.json | cfssljson -bare ca
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 ca-key.pem
@@ -60,11 +62,11 @@ ca.pem
 
 ## Client and Server Certificates
 
-In this section you will generate client and server certificates for each Kubernetes component and a client certificate for the Kubernetes `admin` user.
+この項では、Kubernetesの各コンポーネントのクライアント及びサーバ証明書、加えて `admin` ユーザのクライアント証明書を作成します。
 
 ### The Admin Client Certificate
 
-Generate the `admin` client certificate and private key:
+`admin` ユーザのクライアント証明書と秘密鍵を作成します。
 
 ```
 {
@@ -98,7 +100,7 @@ cfssl gencert \
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 admin-key.pem
@@ -107,9 +109,9 @@ admin.pem
 
 ### The Kubelet Client Certificates
 
-Kubernetes uses a [special-purpose authorization mode](https://kubernetes.io/docs/admin/authorization/node/) called Node Authorizer, that specifically authorizes API requests made by [Kubelets](https://kubernetes.io/docs/concepts/overview/components/#kubelet). In order to be authorized by the Node Authorizer, Kubelets must use a credential that identifies them as being in the `system:nodes` group, with a username of `system:node:<nodeName>`. In this section you will create a certificate for each Kubernetes worker node that meets the Node Authorizer requirements.
+Kubernetesは[Node Authorizer](https://kubernetes.io/docs/admin/authorization/node/)と呼ばれる特別な権限があり、特に[Kubelets](https://kubernetes.io/docs/concepts/overview/components/#kubelet)からのAPIリクエストを管理します。Node Authorizerを利用するためには、KubeletはGroup名を`system:nodes`、User名を`system:node:<nodeName>`とする必要があります。この項ではNode Authorizerを利用できるKubernetesのWorkerノードの証明書を作成します。
 
-Generate a certificate and private key for each Kubernetes worker node:
+Kubernetesの証明書と秘密鍵を作成します。
 
 ```
 for instance in worker-0 worker-1 worker-2; do
@@ -148,7 +150,7 @@ cfssl gencert \
 done
 ```
 
-Results:
+下記が生成されます。
 
 ```
 worker-0-key.pem
@@ -161,7 +163,7 @@ worker-2.pem
 
 ### The Controller Manager Client Certificate
 
-Generate the `kube-controller-manager` client certificate and private key:
+`kube-controller-manager`の証明書と秘密鍵を作成します。
 
 ```
 {
@@ -195,7 +197,7 @@ cfssl gencert \
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 kube-controller-manager-key.pem
@@ -205,7 +207,7 @@ kube-controller-manager.pem
 
 ### The Kube Proxy Client Certificate
 
-Generate the `kube-proxy` client certificate and private key:
+`kube-proxy`のクライアント証明書と秘密鍵を生成します。
 
 ```
 {
@@ -239,7 +241,7 @@ cfssl gencert \
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 kube-proxy-key.pem
@@ -248,7 +250,7 @@ kube-proxy.pem
 
 ### The Scheduler Client Certificate
 
-Generate the `kube-scheduler` client certificate and private key:
+`kube-scheduler`の証明書と秘密鍵を生成します。
 
 ```
 {
@@ -282,7 +284,7 @@ cfssl gencert \
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 kube-scheduler-key.pem
@@ -294,7 +296,11 @@ kube-scheduler.pem
 
 The `kubernetes-the-hard-way` static IP address will be included in the list of subject alternative names for the Kubernetes API Server certificate. This will ensure the certificate can be validated by remote clients.
 
-Generate the Kubernetes API Server certificate and private key:
+`kubernetes-the-hard-way`の静的IPはKubernetesAPIサーバ証明書のSubject Alternative Name(SAN)に含まれます。
+
+> Subject Alternative Name(SAN)は1枚の証明書で複数のウェブサイトの暗号化通信を実現する仕組みです。SSL証明書でCommon Name(CN)と呼ばれる通常のホスト名などを記載する領域の他にSANという領域を持ち、そこに追加で証明したいFQDNを記載します。
+
+KubernetesAPIサーバの証明書と秘密鍵を発行します。
 
 ```
 {
@@ -335,9 +341,9 @@ cfssl gencert \
 }
 ```
 
-> The Kubernetes API server is automatically assigned the `kubernetes` internal dns name, which will be linked to the first IP address (`10.32.0.1`) from the address range (`10.32.0.0/24`) reserved for internal cluster services during the [control plane bootstrapping](08-bootstrapping-kubernetes-controllers.md#configure-the-kubernetes-api-server) lab.
+> Kubernetes APIサーバは`kubernetes`という内部DNSが自動的に張られ、最初のIP (今回の場合は `10.32.0.1`)に自動で紐付けられます。詳細は後半の演習 [control plane bootstrapping](08-bootstrapping-kubernetes-controllers.) で実施します。
 
-Results:
+下記が生成されます。
 
 ```
 kubernetes-key.pem
@@ -346,9 +352,9 @@ kubernetes.pem
 
 ## The Service Account Key Pair
 
-The Kubernetes Controller Manager leverages a key pair to generate and sign service account tokens as described in the [managing service accounts](https://kubernetes.io/docs/admin/service-accounts-admin/) documentation.
+Kubernetesのコントローラマネージャは[managing service accounts](https://kubernetes.io/docs/admin/service-accounts-admin/)に書かれているようにサービスアカウントトークンを作成して署名します。
 
-Generate the `service-account` certificate and private key:
+`service-account`の証明書と秘密鍵を作成します。
 
 ```
 {
@@ -382,7 +388,7 @@ cfssl gencert \
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 service-account-key.pem
@@ -392,7 +398,7 @@ service-account.pem
 
 ## Distribute the Client and Server Certificates
 
-Copy the appropriate certificates and private keys to each worker instance:
+作成した証明書と秘密鍵をそれぞれのWorkerインスタンスにコピーします。
 
 ```
 for instance in worker-0 worker-1 worker-2; do
@@ -400,7 +406,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-Copy the appropriate certificates and private keys to each controller instance:
+作成した証明書と秘密鍵をそれぞれのControllerインスタンスにコピーします。
 
 ```
 for instance in controller-0 controller-1 controller-2; do
@@ -409,6 +415,6 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-> The `kube-proxy`, `kube-controller-manager`, `kube-scheduler`, and `kubelet` client certificates will be used to generate client authentication configuration files in the next lab.
+> `kube-proxy`、`kube-controller-manager`、`kube-scheduler`、`kubelet` のクライアント証明書はクライアント認証の設定ファイルを作成するのに使われます。次の章で詳しく実施していきます。
 
 Next: [Generating Kubernetes Configuration Files for Authentication](05-kubernetes-configuration-files.md)
