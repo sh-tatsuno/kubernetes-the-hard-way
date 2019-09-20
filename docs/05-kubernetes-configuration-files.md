@@ -1,16 +1,16 @@
 # Generating Kubernetes Configuration Files for Authentication
 
-In this lab you will generate [Kubernetes configuration files](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/), also known as kubeconfigs, which enable Kubernetes clients to locate and authenticate to the Kubernetes API Servers.
+この章では俗にkubeconfigsと呼ばれる[Kubernetesの設定ファイル群](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)を作成します。kubeconfigsを利用することで、KubernetesのクライアントはKubernetesAPIサーバとの認証を行うことができるようになります。
 
 ## Client Authentication Configs
 
-In this section you will generate kubeconfig files for the `controller manager`, `kubelet`, `kube-proxy`, and `scheduler` clients and the `admin` user.
+この項では`controller manager`, `kubelet`, `kube-proxy`, `scheduler`それぞれのクライアントと`admin`ユーザのkubeconfig filesを作成します。
 
 ### Kubernetes Public IP Address
 
-Each kubeconfig requires a Kubernetes API Server to connect to. To support high availability the IP address assigned to the external load balancer fronting the Kubernetes API Servers will be used.
+kubeconfig filesの作成には接続用のKubernetesAPIサーバが必要です。高可用性を実現するために、KubernetesAPIサーバが利用する外部ロードバランサに対してIPアドレスが割り当てられます。
 
-Retrieve the `kubernetes-the-hard-way` static IP address:
+`kubernetes-the-hard-way`の静的IPアドレスを検索します。
 
 ```
 KUBERNETES_PUBLIC_ADDRESS=$(gcloud compute addresses describe kubernetes-the-hard-way \
