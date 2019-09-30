@@ -20,11 +20,11 @@ KUBERNETES_PUBLIC_ADDRESS=$(gcloud compute addresses describe kubernetes-the-har
 
 ### The kubelet Kubernetes Configuration File
 
-When generating kubeconfig files for Kubelets the client certificate matching the Kubelet's node name must be used. This will ensure Kubelets are properly authorized by the Kubernetes [Node Authorizer](https://kubernetes.io/docs/admin/authorization/node/).
+Kubeletsのkubeconfigファイルを作成する際にはKubeletsのnodeに対応するクライアント証明書が必要です。これによって、Kubeletsはkubernetesに認証されます [Node Authorizer](https://kubernetes.io/docs/admin/authorization/node/)。
 
-> The following commands must be run in the same directory used to generate the SSL certificates during the [Generating TLS Certificates](04-certificate-authority.md) lab.
+> この後のコマンドは[Generating TLS Certificates](04-certificate-authority.md)の章に作られたSSL証明書と同じディレクトリで実行します。
 
-Generate a kubeconfig file for each worker node:
+それぞれのWorkerノードのkubeconfigファイルを作成します。
 
 ```
 for instance in worker-0 worker-1 worker-2; do
@@ -59,7 +59,7 @@ worker-2.kubeconfig
 
 ### The kube-proxy Kubernetes Configuration File
 
-Generate a kubeconfig file for the `kube-proxy` service:
+`kube-proxy` サービス用にkubeconfigファイルを作成します。
 
 ```
 {
@@ -84,7 +84,7 @@ Generate a kubeconfig file for the `kube-proxy` service:
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 kube-proxy.kubeconfig
@@ -92,7 +92,7 @@ kube-proxy.kubeconfig
 
 ### The kube-controller-manager Kubernetes Configuration File
 
-Generate a kubeconfig file for the `kube-controller-manager` service:
+`kube-controller-manager` サービス用にkubeconfigファイルを作成します。
 
 ```
 {
@@ -117,16 +117,15 @@ Generate a kubeconfig file for the `kube-controller-manager` service:
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 kube-controller-manager.kubeconfig
 ```
 
-
 ### The kube-scheduler Kubernetes Configuration File
 
-Generate a kubeconfig file for the `kube-scheduler` service:
+`kube-scheduler` サービス用にkubeconfigファイルを作成します。
 
 ```
 {
@@ -151,7 +150,7 @@ Generate a kubeconfig file for the `kube-scheduler` service:
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 kube-scheduler.kubeconfig
@@ -159,7 +158,7 @@ kube-scheduler.kubeconfig
 
 ### The admin Kubernetes Configuration File
 
-Generate a kubeconfig file for the `admin` user:
+`admin` ユーザー用にkubeconfigファイルを作成します。
 
 ```
 {
@@ -184,18 +183,16 @@ Generate a kubeconfig file for the `admin` user:
 }
 ```
 
-Results:
+下記が生成されます。
 
 ```
 admin.kubeconfig
 ```
 
 
-## 
-
 ## Distribute the Kubernetes Configuration Files
 
-Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to each worker instance:
+`kubelet` 及び `kube-proxy` のkubeconfigファイルをそれぞれのworkerインスタンスにコピーします。
 
 ```
 for instance in worker-0 worker-1 worker-2; do
@@ -203,7 +200,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-Copy the appropriate `kube-controller-manager` and `kube-scheduler` kubeconfig files to each controller instance:
+`kube-controller-manager` 及び `kube-scheduler` のkubeconfigファイルをそれぞれのcontrollerインスタンスにコピーします。
 
 ```
 for instance in controller-0 controller-1 controller-2; do
