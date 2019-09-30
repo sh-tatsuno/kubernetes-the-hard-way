@@ -2,19 +2,17 @@
 
 ## Google Cloud Platform
 
-This tutorial leverages the [Google Cloud Platform](https://cloud.google.com/) to streamline provisioning of the compute infrastructure required to bootstrap a Kubernetes cluster from the ground up. [Sign up](https://cloud.google.com/free/) for $300 in free credits.
+このチュートリアルでは[Google Cloud Platform](https://cloud.google.com/)を使って簡単に0からkubernetesのクラスタを構築していきます。[Sign up](https://cloud.google.com/free/)すれば年間$300無料で使えることができます。[calculator](https://cloud.google.com/products/calculator/#id=55663256-c384-449c-9306-e39893e23afb)を使うと、このチュートリアルは1時間$0.23、1日$5.46ほどかかります。
 
-[Estimated cost](https://cloud.google.com/products/calculator/#id=55663256-c384-449c-9306-e39893e23afb) to run this tutorial: $0.23 per hour ($5.46 per day).
-
-> The compute resources required for this tutorial exceed the Google Cloud Platform free tier.
+> このチュートリアルはGCPのTrialの枠を超えて利用するのでご注意ください。
 
 ## Google Cloud Platform SDK
 
 ### Install the Google Cloud SDK
 
-Follow the Google Cloud SDK [documentation](https://cloud.google.com/sdk/) to install and configure the `gcloud` command line utility.
+まず最初に[Google Cloud SDK](https://cloud.google.com/sdk/)をインストールし、`gcloud` コマンドを使えるように設定してください。
 
-Verify the Google Cloud SDK version is 262.0.0 or higher:
+Google Cloud SDKのバージョンが262.0.0以上であることを確認してください。
 
 ```
 gcloud version
@@ -22,42 +20,43 @@ gcloud version
 
 ### Set a Default Compute Region and Zone
 
-This tutorial assumes a default compute region and zone have been configured.
+この章ではデフォルトのリージョンとゾーンを設定します。
 
-If you are using the `gcloud` command-line tool for the first time `init` is the easiest way to do this:
+もしgcloudコマンドを利用するのがはじめてな場合は`init`を使って初期化してください。
 
 ```
 gcloud init
 ```
 
-Then be sure to authorize gcloud to access the Cloud Platform with your Google user credentials:
+そしてgcloudコマンドで認証して、GCPにアクセスできることを確認してください。
 
 ```
 gcloud auth login
 ```
 
-Next set a default compute region and compute zone:
+次にデフォルトのリージョンとゾーンを設定します。
 
 ```
 gcloud config set compute/region us-west1
 ```
 
-Set a default compute zone:
+デフォルトのゾーンをもう一つ設定します。
 
 ```
 gcloud config set compute/zone us-west1-c
 ```
 
-> Use the `gcloud compute zones list` command to view additional regions and zones.
+> `gcloud compute zones list` のコマンドを使うことで利用可能なリージョンとゾーンのリストを見ることができます。
 
 ## Running Commands in Parallel with tmux
 
-[tmux](https://github.com/tmux/tmux/wiki) can be used to run commands on multiple compute instances at the same time. Labs in this tutorial may require running the same commands across multiple compute instances, in those cases consider using tmux and splitting a window into multiple panes with synchronize-panes enabled to speed up the provisioning process.
+[tmux](https://github.com/tmux/tmux/wiki) は複数のインスタンスで同時にコマンドを実行することができます。このチュートリアルでは
+複数のインスタンスにまたがってコマンドを実行する必要があります。そのため、tmuxを使ってwindowを分割してよりこの辺りの操作を簡単に行う事ができます。
 
-> The use of tmux is optional and not required to complete this tutorial.
+> tmuxの利用は必須ではありません。
 
 ![tmux screenshot](images/tmux-screenshot.png)
 
-> Enable synchronize-panes by pressing `ctrl+b` followed by `shift+:`. Next type `set synchronize-panes on` at the prompt. To disable synchronization: `set synchronize-panes off`.
+> Enable synchronize-panes by pressing `ctrl+b` -> `shift+:`で同期的にパネルを利用することができます。その後に `set synchronize-panes on` と入力してください。同期をオフにするには `set synchronize-panes off` を入力してください。
 
 Next: [Installing the Client Tools](02-client-tools.md)
